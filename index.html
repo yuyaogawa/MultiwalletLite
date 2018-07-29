@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>MultiWallet v1.00</title>
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Pragma-Directive" content="no-cache">
+    <meta http-equiv="Cache-Control" content="no-cache">
+    <meta http-equiv="Cache-Directive" content="no-cache">
+    <meta http-equiv="Expires" content="Wed, 09 Aug 2000 08:21:57 GMT">
+    <meta name="Revisit-After" content="7 days"> 
+    <meta name="Created" content="20170113214947UTC">
+    <link rel="Shortcut Icon" href="/favicon.ico">
+    <!-- added by yuya 2017-08-23 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="js/bitcore-lib.min.js"></script>
+    <script src="js/bitcore-mnemonic.min.js"></script>
+    <script src="js/jquery.min.js"></script>
+    <!--script src="js/jquery-ui.min.js"></script-->
+    <script src="js/jquery.qrcode.min.js"></script>
+    <script src="js/moment.min.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+    <script src="js/html5-qrcode.js"></script>
+    <script src="js/jsqrcode-combined.min.js"></script>
+    <script src="js/buffer.min.js"></script>
+    <script src="js/bitcoinjs.js"></script>
+    <script src="js/pusher.min.js"></script>
+    <script src="js/ethereumjs-wallet-0.6.0.min.js"></script>
+    <script src="js/crypto-js.js"></script>
+    <script src="js/util.js"></script>
+    <script src="js/app.js"></script>
+
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/3rdparty.css">
+
+</head>
+<body>
+<!-- Header Banner -->
+
+<!--  Information Modal  -->
+<div class="modal fade" id="infoModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <a class="modal-title" id="exampleModalLabel"></a>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                  <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                URLはあなたのウォレットを特定するための情報であり、パスワードで暗号化してあります。
+                また設定からバックアップをすることを強くお薦めします。URLをなくした場合でもバックアップから復元可能です。
+                秘密鍵はあなた自身のものであり、本サーバへ送信されることはありません。
+                このウォレットはセキュリティとユーザビリティのバランスを考慮し設計されています。
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Setting Modal -->
+<div class="modal fade" id="settingsModal" tabindex="-1" role="dialog" aria-labelledby="settingsModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <a class="modal-title" id="exampleModalLabel"></a>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                  <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+            <div class="container col">
+                <div id="settingsChoices">
+                        <button type="button" class="btn btn-primary" id="choiceCurrency">
+                          通貨設定
+                        </button>
+                        <button type="button" class="btn btn-primary" id="choiceBackup">
+                          バックアップ
+                        </button>
+                </div>
+
+                <div id="settingsCurrency">
+                    <div class="form-group">
+                        <label>表示する通貨</label>
+                        <select id="currencySelect" class="form-control">
+                        </select>
+                    </div>
+                </div>
+                <div id="settingsBackup">
+                    <div class="form-group">
+                        <label>Mnemonic words</label>
+                        <textarea rows="3" type="text" class="form-control" id="txtMnemonic4Bk" readonly></textarea>
+                        <label>Password</label>
+                            <input type="text" class="form-control" id="txtPassword4Bk" readonly>
+                        <label>Litecoin Address</label>
+                            <input type="text" class="form-control" id="backupPubkeyLTC" readonly>
+                        <label>Bitcoin Address</label>
+                            <input type="text" class="form-control" id="backupPubkeyBTC" readonly>
+                        <label>Ethereum Address</label>
+                            <input type="text" class="form-control" id="backupPubkeyETH" readonly>
+                        <label>URL</label>
+                        <textarea rows="3" type="text" class="form-control" id="backupUrl" readonly></textarea>
+                        <label>Wallet QRcode</label><br>
+                        <img src="css/Bitcoin1.png" id="qrUrl4Bk">
+                    </div>
+                    <button id="btnPrint" type="button" class="btn btn-primary">Print</button>
+                    <div>
+                        <br>2つの方法で復元可能です。<br><br>
+                        1. 上記で印刷したQRコードを読み込んむと、URLを自動的に作成し、ログイン画面を表示することができます。<br><br>
+                        2. もし別のウォレットへ乗り換えたい場合、12個の英単語を使い復元することができます。Jaxxやelectrumなどの対応ウォレットで復元できます。<br>
+                    </div>
+                </div>
+            </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+            </div>
+        </div>
+      </div>
+</div>
+<!-- Login Modal -->
+<div class="modal fade" id="passwordModal" tabindex="-1" role="dialog" aria-labelledby="passwordModalLabel" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+        <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <!--div class="modal-header" id="passwordModalheader"-->
+            </div>
+            <div class="modal-body">
+
+                <!--img src='./css/' height='30px' border='0' hspace='3px'-->
+                <label> マルチウォレットLiteへようこそ.</label><br>
+                Webブラウザベースの軽量マルチウォレットです。ビットコイン、ライトコイン、イサーリアムの送付、受取が可能です。以前にこのサイトを訪れたことがある方は、お気に入りに保存したURLから再度アクセスしてください。<br>
+
+                初めての方、もしくは再度ウォレットを作りたい方は、以下のボタンより新規作成してください。
+                パスワードの設定はセキュリティを高めることができます。
+                パスワードの設定をしない場合、他のウォレットとの互換性が保持され、新規作成時に取得する12個の単語を使って他のHDウォレットからリカバリーが可能です。<br>
+
+                新規作成時にはバックアップをすることを強くお薦めします。ビットコインはあたな自身の銀行です。あなたの銀行であるがうえに、セキュリティも自己管理が必要になります。<br>
+
+                パスワードを設定後、URLを必ず保存してください。<br><br>
+
+                    <button type="button" class="btn btn-primary" id="setupPassword">はい</button>
+                    <!--button type="button" class="btn btn-warning" data-dismiss="modal" onclick="generateAddress6()">いいえ</button-->
+
+                <div id="passwordBox">
+                <hr>
+                    <div class="form-group">
+                        <form style="max-width:350px">
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="txtPassword" placeholder="Password">
+                                    <div class="input-group-btn">
+                    <button type="button" class="btn btn-default" data-dismiss="modal" id="loginBtn" onclick="generateAddress5()">作成</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+      </div>
+</div>
+<!-- Login2 Modal -->
+<div class="modal fade" id="enterPassword" tabindex="-1" role="dialog" aria-labelledby="enterPasswordLabel" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+        <div class="modal-dialog" role="document">
+        <div class="modal-content">
+
+            <div class="modal-body">
+                    <div class="alert alert-danger collapse" role="alert" id="wrongPassword">
+                    </div>
+                    <div class="form-group">
+                        <form style="max-width:350px">
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="chkPassword" placeholder="Password">
+                                <div class="input-group-btn">
+                                    <button type="button" class="btn btn-default" id="loginBtn2" onclick="checkPassword()">ログイン</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+            </div>
+        </div>
+      </div>
+</div>
+<!-- Message Box -->
+<div class="alert alert-success collapse" role="alert" id="success" style="text-align:center;">
+  <strong>送付しました</strong>
+</div>
+<!-- Message Box -->
+<div class="alert alert-danger" hidden="hidden" id="error" style="text-align:center;">
+    <button type="button" class="close" data-hide="alert" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+    </button>
+    <div id="errorMsg"></div>
+</div>
+
+    <nav class="banner navbar navbar-default navbar-fixed-top" role="navigation">
+        <div class="container">
+            <a class="brand" href="./wallet.html">
+                <img src="./logo.png" alt="" style="margin-top: -4px; width: 129px;">
+            </a>
+            <a class="KKBrand" href="http://yuyaogawa.com/" target="_blank">
+                by Yuya
+            </a>
+            <!--div id="settings"><span class="glyphicon glyphicon-info-sign"></span></div-->
+            <!--div id="info"><span class="glyphicon glyphicon-info-sign"></span></div-->
+            <div>
+                <!-- ********************* Button trigger modal ********************* -->
+                <button type="text" class="glyphicon glyphicon-info-sign" data-toggle="modal" data-target="#infoModal"></button>
+                <button type="text" class="glyphicon glyphicon-cog" data-toggle="modal" id="settings1"></button>
+                <button type="button" class="glyphicon glyphicon-refresh" onclick="updateBalances();"></button>
+            </div>
+        </div>
+    </nav>
+
+<div class="container" style="display: block;">
+<!-- Your Bitcoin address -->
+
+<div class="container">
+                    <div id="">
+                        <div class="tab">
+                            <button class="tablinks" onclick="openTab(event, 'ALL')" id="defaultOpenLTC">ALL</button>
+                            <button class="tablinks" onclick="openTab(event, 'LTC')" >LTC</button>
+                            <button class="tablinks" onclick="openTab(event, 'BTC')">BTC</button>
+                            <button class="tablinks" onclick="openTab(event, 'ETH')">ETH</button>
+                        </div>
+                        <div id="ALL" class="tabcontent">
+                            <table class="box2">
+                                <tr>
+                                    <td>
+                                        <div class="fl20">
+                                          Total Value
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="fl20" id="currencyALL">
+                                          
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="fl20" id="balanceLTC2">
+                                          LTC
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="fl20" id="currencyLTC2">
+                                          
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="fl20" id="balanceBTC2">
+                                          BTC
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="fl20" id="currencyBTC2">
+                                          
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="fl20" id="balanceETH2">
+                                          ETH
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="fl20" id="currencyETH2">
+                                          
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div id="LTC" class="tabcontent">
+                            <div id="addressBox">
+                                <div id="addressTxt">Your Litecoin Address</div>
+                                <span id="publicKeyLTC"></span>
+                            </div>
+                            <div id="walletInfo">
+                                <div class="container">
+                                    <div class="">
+                                        <div id="leftInfo">
+                                            <div id="walletName"></div>
+                                            <div class="balance">
+                                                <span id="balanceLTC">0.00000000</span>
+                                            </div>
+                                            <div class="currency">
+                                                <span id="currencyLTC">USD</span>
+                                            </div>
+                                        </div>
+                                        <div class="qr-link">
+                                            <div id="qrcodeLTC"></div>
+                                        </div>
+                                        <div class="clearfix"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <table>
+                                <tr>
+                                <button id="openSend" type="button" class="btn btn-info" data-toggle="collapse" data-target="#send">Send</button>
+                                <button id="openReceive" type="button" class="btn btn-info" data-toggle="collapse" data-target="#receive">Receive</button>
+                                </tr>
+                            </table>
+                        </div>
+                        <div id="BTC" class="tabcontent">
+                            <div id="addressBox">
+                                <div id="addressTxt">Your Bitcoin Address</div>
+                                <span id="publicKeyBTC"></span>
+                            </div>
+                            <div id="walletInfo">
+                                <div class="container">
+                                    <div class="">
+                                        <div id="leftInfo">
+                                            <div id="walletName"></div>
+                                            <div class="balance">
+                                                <span id="balanceBTC">0.00000000</span>
+                                            </div>
+                                            <div class="currency">
+                                                <span id="currencyBTC">USD</span>
+                                            </div>
+                                        </div>
+                                        <div class="qr-link">
+                                            <div id="qrcodeBTC"></div>
+                                        </div>
+                                        <div class="clearfix"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <table>
+                                <tr>
+                                <button id="openSend" type="button" class="btn btn-info" data-toggle="collapse" data-target="#send">Send</button>
+                                <button id="openReceive" type="button" class="btn btn-info" data-toggle="collapse" data-target="#receive">Receive</button>
+                                </tr>
+                            </table>
+                        </div>
+                        <div id="ETH" class="tabcontent">
+                            <div id="addressBox">
+                                <div id="addressTxt">Your Ethereum Address</div>
+                                <span id="publicKeyETH"></span>
+                            </div>
+                            <div id="walletInfo">
+                                <div class="container">
+                                    <div class="">
+                                        <div id="leftInfo">
+                                            <div id="walletName"></div>
+                                            <div class="balance">
+                                                <span id="balanceETH">0.00000000</span>
+                                            </div>
+                                            <div class="currency">
+                                                <span id="currencyETH">USD</span>
+                                            </div>
+                                        </div>
+                                        <div class="qr-link">
+                                            <div id="qrcodeETH"></div>
+                                        </div>
+                                        <div class="clearfix"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <table>
+                                <tr>
+                                <button id="openSend" type="button" class="btn btn-info" data-toggle="collapse" data-target="#send">Send</button>
+                                <button id="openReceive" type="button" class="btn btn-info" data-toggle="collapse" data-target="#receive">Receive</button>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <div id="send" class="collapse">
+                                        <form>
+                                            <div class="input-group">
+                                                <div class="input-group-btn">
+                                                    <button style="width:40px;" class="btn btn-default" type="button" onclick="scanQRcode();"  data-toggle="modal" data-target="#ScannerModal">
+                                                    <i class="glyphicon glyphicon-camera"></i>
+                                                    </button>
+                                                </div>
+                                                <input type="text" class="form-control" id="sendAddr" placeholder="Receiving Address">
+                                            </div>
+                                            <div class="input-group">
+                                                <span class="input-group-addon"  type="button" id="changeType" style="width:40px;cursor:pointer;"><span class="addonBox">Ł</span></span>
+                                                <input type="text" class="form-control" id="txtAmount" placeholder="Amount"><span id="fiatPrice"></span>
+                                            </div>
+                                            <div class="input-group">
+                                                <span class="input-group-addon" style="width:40px;padding:0px 8px;cursor:help;">Fee</span>
+                                                    <div class="form-group">
+                                                        <select id="feeSelect" class="form-control" style="max-width:;"></select>
+                                                    </div>
+                                            </div>
+                                            <div class="input-group">
+                                                    <div class="input-group-btn">
+                                                        <button class="btn btn-primary" type="button" data-toggle="modal" data-target="#sendModal___" style="width:100%;" id="sendBtn" disabled="disabled">
+                                                        CONFIRM
+                                                        </button>
+                                                    </div>
+                                            </div>
+                                        </form>
+                        </div>
+                        <div id="receive" class="collapse">
+                                        <form>
+                                            <div class="input-group">
+                                                <span class="input-group-addon" id="changeType2" style="width:40px;cursor:pointer;""><span class="addonBox">Ł</span></span>
+                                                <input type="text" class="form-control" id="Recamount" placeholder="Amount:"><span id="fiatPrice2"></span>
+                                                <div class="input-group-btn">
+                                                <button class="btn btn-default" type="button" onclick="generateQRcode();"  data-toggle="modal" data-target="#ReceivingQRcode">
+                                                    <i class="glyphicon glyphicon-piggy-bank"></i>
+                                                </button>
+                                                </div>
+                                            </div>
+                                        </form>
+                        </div>
+
+                        <div class="container">
+                            <!-- Your Litecoin Transactions -->
+                            <div id="historyLTC"></div>
+                            <div id="nohistoryLTC">
+                                <hr>No transaction history<hr>
+                            </div>
+                            <!-- Your Bitcoin Transactions -->
+                            <div id="historyBTC"></div>
+                            <div id="nohistoryBTC">
+                                <hr>No transaction history<hr>
+                            </div>
+                            <!-- Your Ethereum Transactions -->
+                            <div id="historyETH"></div>
+                            <div id="nohistoryETH">
+                                <hr>No transaction history<hr>
+                            </div>
+                        </div>
+                    </div>
+
+</div>
+</div>
+
+<!-- Modal for ScanQRcode -->
+<div class="modal fade" id="ScannerModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h7 class="modal-title" id="exampleModalLabel">ScanQRcode</h7>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <div id="reader" style="width:300px;height:250px">
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal"  onclick="stopCamera();">Stop</button>
+          </div>
+        </div>
+      </div>
+</div>
+
+<!-- Modal for ReceivingQRcode -->
+<div class="modal fade" id="ReceivingQRcode" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h7 class="modal-title" id="exampleModalLabel">ReceivingQRcode</h7>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <p>Requesting <span id="generateAmount"></span><span id="fiatPrice3"></span> to:</p>
+            <p border='0' height='60px' vspace='10px' id="generateAddress"></p>
+            <img src="css/Bitcoin1.png" id="receiveQR">
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal" ">Stop</button>
+          </div>
+        </div>
+      </div>
+</div>
+
+<!-- Modal for Confirmation -->
+<div class="modal fade" id="sendModal" tabindex="-1" role="dialog" aria-labelledby="sendModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-body" position="center">
+            <!--button type="button" class="btn btn-primary" data-dismiss="modal" onclick="sendBitcoin()">Confirm</button-->
+            <button type="button" class="btn btn-primary" data-dismiss="modal" id="confrim">Confirm</button>
+            <button type="button" class="btn btn-warning" data-dismiss="modal">Cancel</button>
+            <!--p id="fee"></p-->
+            <hr>
+            <p style="font-size: 7;color:gray;">This transaction includes approximately <span id="miningfee"></span>  fee <span id="fiatfeePrice"></span></p>
+          </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading modal -->
+<div id="loader-bg">
+  <div id="loader">
+    <img src="css/gif-load.gif" width="80" height="80" alt="Sending transaction..." />
+    <p>Processing...</p>
+  </div>
+</div>
+<audio id="noise"></audio>
+
+<script type="text/javascript">
+    // All bitcoin functions are in app.js
+    // You can add codes here except bitcoin functions.
+
+    // Get the element with id="defaultOpen" and click on it
+    document.getElementById("defaultOpenLTC").click();
+
+</script>
+
+</body>
+</html>
